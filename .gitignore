@@ -1,3 +1,6 @@
 .buildmode
 *.o
 .idea
+cachegrind.out*
+perf.data*
+.vscode
