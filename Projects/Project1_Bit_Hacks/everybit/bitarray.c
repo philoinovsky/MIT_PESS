@@ -108,6 +108,11 @@ static size_t modulo(const ssize_t n, const size_t m);
 static char bitmask(const size_t bit_index);
 
 
+static void move_array(bitarray_t* const bitarray,
+                        const size_t from,
+                        const size_t length,
+                        const size_t to);
+
 // ******************************* Functions ********************************
 
 bitarray_t* bitarray_new(const size_t bit_sz) {
@@ -197,13 +202,93 @@ void bitarray_rotate(bitarray_t* const bitarray,
                        modulo(-bit_right_amount, bit_length));
 }
 
+static unsigned char lookup[16] = {
+0x0, 0x8, 0x4, 0xc, 0x2, 0xa, 0x6, 0xe,
+0x1, 0x9, 0x5, 0xd, 0x3, 0xb, 0x7, 0xf, };
+
+char reverse(char n) {
+   // Reverse the top and bottom nibble then swap them.
+   return (lookup[n&0b1111] << 4) | lookup[n>>4];
+}
+
+char mask[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+char keep[8] = {0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff};
+
+static void bitarray_reverse(bitarray_t* const bitarray,
+                              const size_t bit_offset,
+                              const size_t bit_length)
+{
+  size_t i = bit_offset;
+  size_t j = bit_offset + bit_length - 1;
+  char* char_i = bitarray->buf + (i / 8);
+  char* char_j = bitarray->buf + (j / 8);
+  size_t im8 = i % 8;
+  size_t jm8 = j % 8;
+  for (; im8 != 0 && jm8 != 7 && i < j; i++, j--)
+  {
+    bool tmp = *char_i & mask[im8];
+    *char_i = (*char_i & ~mask[im8]) | ((*char_j & mask[jm8]) ? mask[im8] : 0);
+    *char_j = (*char_j & ~mask[jm8]) | (tmp ? mask[jm8] : 0);
+    if (im8 == 7)
+      char_i++;
+    im8 = (im8 + 1) % 8;
+    if (jm8 == 0)
+      char_j--;
+    jm8 = (jm8 + 7) % 8;
+  }
+  char reversed_i = reverse(*char_i);
+  char reversed_j = reverse(*char_j);
+  while (i < j)
+  {
+    if (im8 != 0)
+    {
+      *char_i = (*char_i & ~keep[7-im8]) | (unsigned char)reversed_j >> im8;
+      *char_j = (unsigned char)reversed_i << im8;
+      i += 8 - im8;
+      j -= 8 - im8;
+      im8 = 0;
+      jm8 = (8 - im8);
+      char_i++;
+      reversed_i = reverse(*char_i);
+    }
+    else if (jm8 != 7)
+    {
+      *char_i = (unsigned char)reversed_j << (7 - jm8);
+      *char_j = (*char_j & keep[7-jm8]) | ((unsigned char)reversed_i << (7-jm8));
+      i += jm8 + 1;
+      j -= jm8 + 1;
+      im8 = jm8 + 1;
+      jm8 = 7;
+      char_j--;
+      reversed_j = reverse(*char_j);
+    }
+    else
+    {
+      *char_i = reversed_i;
+      *char_j = reversed_j;
+      i += 8;
+      j -= 8;
+      char_i++;
+      char_j--;
+      reversed_i = reverse(char_i);
+      reversed_j = reverse(char_j);
+    }
+  }
+}
+
 static void bitarray_rotate_left(bitarray_t* const bitarray,
                                  const size_t bit_offset,
                                  const size_t bit_length,
                                  const size_t bit_left_amount) {
-  for (size_t i = 0; i < bit_left_amount; i++) {
-    bitarray_rotate_left_one(bitarray, bit_offset, bit_length);
-  }
+  // 1. old implementation
+  // for (size_t i = 0; i < bit_left_amount; i++) {
+  //   bitarray_rotate_left_one(bitarray, bit_offset, bit_length);
+  // }
+  // 2. direct copy
+  // 3. reverse
+  bitarray_reverse(bitarray, bit_offset, bit_left_amount);
+  bitarray_reverse(bitarray, bit_offset + bit_left_amount, bit_length - bit_left_amount);
+  bitarray_reverse(bitarray, bit_offset, bit_length);
 }
 
 static void bitarray_rotate_left_one(bitarray_t* const bitarray,
