@@ -45,4 +45,4 @@ loop: loop.o
 	$(CC) -o loop $^ $(LDFLAGS)
 
 clean::
-	rm -f loop *.o *.s .cflags perf.data */perf.data
+	rm -f loop *.o *.s .cflags perf.data* */perf.data
