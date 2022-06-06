@@ -1,0 +1,44 @@
+- Definition
+    - determinacy race occurs when two logically parallel instructions access the same memory location and at least one of the instructions performs a write
+- Types of Races
+    - read race: one read, one write
+    - write race: multiple writes
+- Avoiding Races
+    - iterations of a `cilk_for` should be independent.
+    - code between `cilk_spawn` and `cilk_sync`, the code of the child should be independent of the code of the parant
+    - machine word size matters. Watch out for races in packed data structures
+- Cilksan Race Detector
+    - `-fsanitize=cilk`
+- Amdahl's Law
+    - if a fraction `α` of an application must be run serially, the speedup can be at most `1/α`
+    - too loose
+- New definition
+    - Tp = execution time on P processors
+    - T1 = work
+    - T∞ = span* (critical-path length of computational depth)
+    - Work Law: Tp >= T1/P
+    - Span Law: Tp >= T∞
+    - Serial Composition
+        - Work: T1(A U B) = T1(A) + T1(B)
+        - Span: T∞(A U B) = T∞(A) + T∞(B)
+    - Parallel Composition
+        - Work: T1(A U B) = T1(A) + T1(B)
+        - Span: T∞(A U B) = max(T∞(A), T∞(B))
+- Cilkscale Scalability Analyzer
+    - Cilkscale uses compiler intrumentation to measure the scalability
+    - it divides work by span
+- Scheduling Theory
+    - Greedy Scheduler
+        - Theorem: any greedy scheduler achieves `Tp <= T1/P + T∞`
+        - Corollary: any greedy scheduler achieves within a factor of 2 of optimal
+        - Corollary: any greedy scheduler achieves near-perfect linear speedup whenever `T1/T∞ >> P`, `T1/PT∞` is called the parallel slackness
+    - Work-Stealing Scheduler
+        - `Tp = T1/P + O(T∞)` expected time (provably)
+        - `Tp ~= T1/P + T∞` time (empirically)
+        - near-perfect linear speedup as long as `P << T1/T∞`
+        - instrumentation in Cilkscale allows you to measure T1 and T∞
+- Cilk Runtime System
+    - each worker maintains a work deque of ready strands, and manipulates the bottom of the deque like a stack
+    - if deque is empty, it steals tasks from its peers
+- Cactus Stack
+    - A pointer to stack space can be passed from parent to child, but not from child to parent

@@ -1,0 +1,17 @@
+# Homework 3 - Vectorization
+- vectorized code
+- to avoid pointers overlapping check?
+    - use `restrict` keyword
+- alignment check
+    - use `__builtin_assume_aligned`
+- flags to enable and debug vectorization
+    - enable: `-fvectorize`
+    - disable: `-fno-vectorize`
+    - identify vectorized loops: `-Rpass=loop-vectorize`
+    - identify failed loops: `-Rpass-missed=loop-vectorize`
+- debugging through assembly code inspection
+    - `perf annotate -f`
+- `#pragma Clang loop`: http://Clang.llvm.org/docs/LanguageExtensions.html#extensions-for-loop-hint-optimizations
+    - `interleave(enabled)` indicates the out-of-order instructions emit
+    - `vectorize(enabled)` force loop to vectorize
+    - `vectorize_width(N)` indicates the size of the register to fit in N elements, if N * sizeof(element) is greater than 64B(avx512 register), it will unroll the loop
