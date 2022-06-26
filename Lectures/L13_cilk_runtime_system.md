@@ -1,0 +1,5 @@
+- performance
+    - Theorem: the cilk work-stealing scheduler achieves expected running time `Tp ~= T1/P + O(T∞)` on P processors
+    - work efficiency: to achive linear speedup on P processors over the serial program, i.e., `Tp ~= Ts/P`, the parallel program must exhibit
+        - Ample parallelism: `T1/T∞ >> P`
+        - High work efficiency: `Ts/T1 ~= 1`
